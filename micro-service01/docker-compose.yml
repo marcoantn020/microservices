@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+    micro_01:
+        build:
+            args:
+                user: marco
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        image: laravel-app
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis_01
+            - queue_01
+        networks:
+            - microservices
+
+    nginx:
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "8000:80"
+            - "443:443"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/conf.d/
+        networks:
+            - microservices
+
+    microzeroum:
+        image: mysql:5.7
+        container_name: microzeroum
+        tty: true
+        environment:
+            MYSQL_DATABASE: 'microzeroum'
+            MYSQL_ROOT_PASSWORD: 'root'
+        ports:
+            - "3306:3306"
+        volumes:
+            - ./.docker/mysql/dbdata:/var/lib/mysql
+        networks:
+            - microservices
+
+    queue_01:
+        build:
+            args:
+                user: marco
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        command: "php artisan queue:work"
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis_01
+        networks:
+            - microservices
+
+    redis_01:
+        container_name: redis_01
+        image: redis:latest
+        ports:
+            - "6378:6379"
+        networks:
+            - microservices
+
+
+networks:
+    microservices:
+        driver: bridge

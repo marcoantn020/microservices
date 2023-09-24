@@ -1,0 +1,7 @@
+micro-service02/.docker/mysql/dbdata/
+micro-service02/vendor/
+
+micro-service01/.docker/mysql/dbdata/
+micro-service01/vendor/
+
+mail/vendor/

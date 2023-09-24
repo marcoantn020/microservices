@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+    mail:
+        build:
+            args:
+                user: marco
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        image: laravel-app
+        restart: unless-stopped
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+        depends_on:
+            - redis_mail
+            - queue_mail
+        networks:
+            - mail_network
+
+    nginx_mail:
+        image: nginx:alpine
+        restart: unless-stopped
+        ports:
+            - "8081:80"
+        volumes:
+            - ./:/var/www
+            - ./docker/nginx/:/etc/nginx/conf.d/
+        networks:
+            - mail_network
+
+    queue_mail:
+        build:
+            args:
+                user: marco
+                uid: 1000
+            context: ./
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        command: "php artisan queue:work"
+        volumes:
+            - ./:/var/www
+        networks:
+            - mail_network
+
+    redis_mail:
+        container_name: redis
+        image: redis:latest
+        ports:
+            - "6379:6379"
+        networks:
+            - mail_network
+
+
+networks:
+    mail_network:
+        driver: bridge
